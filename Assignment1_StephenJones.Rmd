@@ -1,0 +1,198 @@
+---
+title: "Assignment1"
+author: "Stephen Jones"
+date: "January 31, 2019"
+output: html_document
+---
+# <span style="font-size:10px;">Choose from the tabs below to view code and links to files on github.</span> {.tabset}
+
+## Assignment 1
+
+
+```{r message=FALSE, warning=FALSE}
+
+#clean the workspace.
+rm(list=ls())
+getwd()
+#need data.table for fread.
+suppressWarnings(library(data.table))
+```
+
+```{r eval=FALSE}
+#download .data file from url, write to local drive, then upload to github
+mushdata<-fread("https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data")
+write.csv(mushdata,'agaricus-lepiota.csv')
+```
+
+```{r message=FALSE, warning=FALSE}
+#download data from github
+library(RCurl)
+mushdata<-read.csv(text=getURL("https://raw.githubusercontent.com/sigmasigmaiota/mushroom/master/agaricus-lepiota.csv"))
+
+#examine data
+summary(mushdata)
+head(mushdata)
+
+#remove first column which serves as a redundant row counter.
+mushdata$X<-NULL
+```
+#####Using the codebook as a reference, test columns for unique values to verify; do the variables match the codebook?
+```{r message=FALSE, warning=FALSE}
+sapply(mushdata, function(x) unique(x))
+```
+#####I'd like to examine the data describing traits observable to pedestrians or hikers, renaming those variables which have been verified with the codebook.
+```{r message=FALSE, warning=FALSE}
+
+colnames(mushdata)[1]<-"Edible"
+colnames(mushdata)[2]<-"CapShape"
+colnames(mushdata)[3]<-"CapSurface"
+colnames(mushdata)[4]<-"CapColor"
+colnames(mushdata)[6]<-"Odor"
+colnames(mushdata)[22]<-"Population"
+colnames(mushdata)[23]<-"Habitat"
+```
+#####Check missing values before recoding. There are 0.
+```{r message=FALSE, warning=FALSE}
+#Check missing values
+sapply(mushdata, function(x) sum(is.na(x)))
+```
+#####Recode using recode command from "car" package.
+```{r message=FALSE, warning=FALSE}
+library(car)
+mushdata$Edible<-recode(mushdata$Edible,
+                        "'e'='edible';
+                        'p'='poisonous'")
+mushdata$CapShape<-recode(mushdata$CapShape,
+                        "'b'='bell';
+                        'c'='conical';
+                        'x'='convex';
+                        'f'='flat';
+                        'k'='knobbed';
+                        's'='sunken'")
+
+mushdata$CapSurface<-recode(mushdata$CapSurface,
+                        "'f'='fibrous';
+                        'g'='grooves';
+                        'y'='scaly';
+                        's'='smooth'")
+
+mushdata$CapColor<-recode(mushdata$CapColor,
+                        "'n'='brown';
+                        'b'='buff';
+                        'c'='cinnamon';
+                        'g'='gray';
+                        'r'='green';
+                        'p'='pink';
+                        'u'='purple';
+                        'e'='red';
+                        'w'='white';
+                        'y'='yellow'")
+mushdata$Odor<-recode(mushdata$Odor,
+                        "'a'='almond';
+                        'l'='anise';
+                        'c'='creosote';
+                        'y'='fishy';
+                        'f'='foul';
+                        'm'='musty';
+                        'n'='none';
+                        'p'='pungent';
+                        's'='spicy'")
+mushdata$Population<-recode(mushdata$Population,
+                        "'a'='abundant';
+                        'c'='clustered';
+                        'n'='numerous';
+                        's'='scattered';
+                        'v'='several';
+                        'y'='solitary'")
+mushdata$Habitat<-recode(mushdata$Habitat,
+                         "'g'='grasses';
+                         'l'='leaves';
+                         'm'='meadows';
+                         'p'='paths';
+                         'u'='urban';
+                         'w'='waste';
+                         'd'='woods'")
+
+```
+#####Check missing values after recoding.
+```{r message=FALSE, warning=FALSE}
+sapply(mushdata, function(x) sum(is.na(x)))
+
+```
+#####Create subset with selected variables.
+```{r message=FALSE, warning=FALSE}
+mushdata.sub<-mushdata[,c("Edible","CapShape","CapSurface","CapColor","Odor","Population","Habitat")]
+```
+#####Create additional numeric variables to prepare for analysis.
+```{r message=FALSE, warning = FALSE}
+mushdata.sub$EdibleN<-as.numeric(recode(mushdata$Edible,
+                        "'edible'=1;
+                        'poisonous'=0"))
+mushdata.sub$CapShapeN<-as.numeric(recode(mushdata$CapShape,
+                        "'bell'=1;
+                        'conical'=2;
+                        'convex'=3;
+                        'flat'=4;
+                        'knobbed'=5;
+                        'sunken'=6"))
+
+mushdata.sub$CapSurfaceN<-as.numeric(recode(mushdata$CapSurface,
+                        "'fibrous'=1;
+                        'grooves'=2;
+                        'scaly'=3;
+                        'smooth'=4"))
+
+mushdata.sub$CapColorN<-as.numeric(recode(mushdata$CapColor,
+                        "'brown'=1;
+                        'buff'=2;
+                        'cinnamon'=3;
+                        'gray'=4;
+                        'green'=5;
+                        'pink'=6;
+                        'purple'=7;
+                        'red'=8;
+                        'white'=9;
+                        'yellow'=10"))
+mushdata.sub$OdorN<-as.numeric(recode(mushdata$Odor,
+                        "'almond'=1;
+                        'anise'=2;
+                        'creosote'=3;
+                        'fishy'=4;
+                        'foul'=5;
+                        'musty'=6;
+                        'none'=7;
+                        'pungent'=8;
+                        'spicy'=9"))
+mushdata.sub$PopulationN<-as.numeric(recode(mushdata$Population,
+                        "'abundant'=1;
+                        'clustered'=2;
+                        'numerous'=3;
+                        'scattered'=4;
+                        'several'=5;
+                        'solitary'=6"))
+mushdata.sub$HabitatN<-as.numeric(recode(mushdata$Habitat,
+                         "'grasses'=1;
+                         'leaves'=2;
+                         'meadows'=3;
+                         'paths'=4;
+                         'urban'=5;
+                         'waste'=6;
+                         'woods'=7"))
+```
+#####Verify numeric recoded variables.
+```{r message=FALSE, warning = FALSE}
+sapply(mushdata.sub[,c("EdibleN","CapShapeN","CapSurfaceN","CapColorN","OdorN","PopulationN","HabitatN")], function(x) is.numeric(x))
+```
+
+#####Split the dataframe, in preparation to compare edible and poisonous plots.
+```{r message=FALSE, warning = FALSE}
+
+Edible.Pois<-split(mushdata.sub[2:14],mushdata$Edible)
+pois<-as.data.frame(Edible.Pois$poisonous)
+edib<-as.data.frame(Edible.Pois$edible)
+
+```
+
+## Links
+
+
