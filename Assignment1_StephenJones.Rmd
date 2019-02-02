@@ -194,5 +194,9 @@ edib<-as.data.frame(Edible.Pois$edible)
 ```
 
 ## Links
+Link to repository file:
+https://github.com/sigmasigmaiota/mushroom/blob/master/Assignment1_StephenJones.Rmd
 
+Direct link to this .Rmd:
+https://raw.githubusercontent.com/sigmasigmaiota/mushroom/master/Assignment1_StephenJones.Rmd
 
