@@ -2,7 +2,11 @@
 title: "Assignment1"
 author: "Stephen Jones"
 date: "January 31, 2019"
-output: html_document
+output:
+  html_document:
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
 ---
 # <span style="font-size:10px;">Choose from the tabs below to view code and links to files on github.</span> {.tabset}
 
@@ -10,7 +14,6 @@ output: html_document
 
 
 ```{r message=FALSE, warning=FALSE}
-
 #clean the workspace.
 rm(list=ls())
 getwd()
@@ -123,78 +126,130 @@ sapply(mushdata, function(x) sum(is.na(x)))
 ```{r message=FALSE, warning=FALSE}
 mushdata.sub<-mushdata[,c("Edible","CapShape","CapSurface","CapColor","Odor","Population","Habitat")]
 ```
-#####Create additional numeric variables to prepare for analysis.
-```{r message=FALSE, warning = FALSE}
-mushdata.sub$EdibleN<-as.numeric(recode(mushdata$Edible,
-                        "'edible'=1;
-                        'poisonous'=0"))
-mushdata.sub$CapShapeN<-as.numeric(recode(mushdata$CapShape,
-                        "'bell'=1;
-                        'conical'=2;
-                        'convex'=3;
-                        'flat'=4;
-                        'knobbed'=5;
-                        'sunken'=6"))
-
-mushdata.sub$CapSurfaceN<-as.numeric(recode(mushdata$CapSurface,
-                        "'fibrous'=1;
-                        'grooves'=2;
-                        'scaly'=3;
-                        'smooth'=4"))
-
-mushdata.sub$CapColorN<-as.numeric(recode(mushdata$CapColor,
-                        "'brown'=1;
-                        'buff'=2;
-                        'cinnamon'=3;
-                        'gray'=4;
-                        'green'=5;
-                        'pink'=6;
-                        'purple'=7;
-                        'red'=8;
-                        'white'=9;
-                        'yellow'=10"))
-mushdata.sub$OdorN<-as.numeric(recode(mushdata$Odor,
-                        "'almond'=1;
-                        'anise'=2;
-                        'creosote'=3;
-                        'fishy'=4;
-                        'foul'=5;
-                        'musty'=6;
-                        'none'=7;
-                        'pungent'=8;
-                        'spicy'=9"))
-mushdata.sub$PopulationN<-as.numeric(recode(mushdata$Population,
-                        "'abundant'=1;
-                        'clustered'=2;
-                        'numerous'=3;
-                        'scattered'=4;
-                        'several'=5;
-                        'solitary'=6"))
-mushdata.sub$HabitatN<-as.numeric(recode(mushdata$Habitat,
-                         "'grasses'=1;
-                         'leaves'=2;
-                         'meadows'=3;
-                         'paths'=4;
-                         'urban'=5;
-                         'waste'=6;
-                         'woods'=7"))
-```
-#####Verify numeric recoded variables.
-```{r message=FALSE, warning = FALSE}
-sapply(mushdata.sub[,c("EdibleN","CapShapeN","CapSurfaceN","CapColorN","OdorN","PopulationN","HabitatN")], function(x) is.numeric(x))
-```
 
 #####Split the dataframe, in preparation to compare edible and poisonous plots.
 ```{r message=FALSE, warning = FALSE}
 
-Edible.Pois<-split(mushdata.sub[2:14],mushdata$Edible)
+Edible.Pois<-split(mushdata.sub[2:7],mushdata$Edible)
 pois<-as.data.frame(Edible.Pois$poisonous)
 edib<-as.data.frame(Edible.Pois$edible)
 
+CS.p<-table(pois$CapShape)
+CSur.p<-table(pois$CapSurface)
+CC.p<-table(pois$CapColor)
+OD.p<-table(pois$Odor)
+POP.p<-table(pois$Population)
+HB.p<-table(pois$Habitat)
+CS.e<-table(edib$CapShape)
+CSur.e<-table(edib$CapSurface)
+CC.e<-table(edib$CapColor)
+OD.e<-table(edib$Odor)
+POP.e<-table(edib$Population)
+HB.e<-table(edib$Habitat)
+
+Prop.CapShape<-merge(as.data.frame(prop.table(CS.p)),as.data.frame(prop.table(CS.e)),by="Var1")
+Prop.CapSurface<-merge(as.data.frame(prop.table(CSur.p)),as.data.frame(prop.table(CSur.e)),by="Var1")
+Prop.CapColor<-merge(as.data.frame(prop.table(CC.p)),as.data.frame(prop.table(CC.e)),by="Var1")
+Prop.Odor<-merge(as.data.frame(prop.table(OD.p)),as.data.frame(prop.table(OD.e)),by="Var1")
+Prop.Population<-merge(as.data.frame(prop.table(POP.p)),as.data.frame(prop.table(POP.e)),by="Var1")
+Prop.Habitat<-merge(as.data.frame(prop.table(HB.p)),as.data.frame(prop.table(HB.e)),by="Var1")
+
+names(Prop.CapShape)<-c("Quality","Pois","Edib")
+names(Prop.CapSurface)<-c("Quality","Pois","Edib")
+names(Prop.CapColor)<-c("Quality","Pois","Edib")
+names(Prop.Odor)<-c("Quality","Pois","Edib")
+names(Prop.Population)<-c("Quality","Pois","Edib")
+names(Prop.Habitat)<-c("Quality","Pois","Edib")
+```
+
+```{r message=FALSE, warning = FALSE}
+library(ggplot2)
+
+ggplot(Prop.CapShape) + 
+  geom_point(aes(Quality,Edib),shape=69,fill="darkgreen", color="green", size=3,alpha=.8) + 
+  geom_point(aes(Quality,Pois),shape=80,fill="darkred", color="red", size=3, alpha=.8) +
+  theme_bw()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"))+
+  ggtitle("Mushroom Cap Shape, Edible vs Poisonous",
+          subtitle="https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data")+
+  xlab("Quality")+
+  ylab("Percent")
+```
+
+
+
+
+
+
+
+```{r message=FALSE, warning = FALSE}
+ggplot(Prop.CapColor) + 
+  geom_point(aes(Quality,Edib),shape=69,fill="darkgreen", color="green", size=3,alpha=.8) + 
+  geom_point(aes(Quality,Pois),shape=80,fill="darkred", color="red", size=3, alpha=.8) +
+  theme_bw()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"))+
+  ggtitle("Mushroom Cap Color, Edible vs Poisonous",
+          subtitle="https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data")+
+  xlab("Quality")+
+  ylab("Percent")
+```
+
+```{r message=FALSE, warning = FALSE}
+ggplot(Prop.CapSurface) + 
+  geom_point(aes(Quality,Edib),shape=69,fill="darkgreen", color="green", size=3,alpha=.8) + 
+  geom_point(aes(Quality,Pois),shape=80,fill="darkred", color="red", size=3, alpha=.8) +
+  theme_bw()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"))+
+  ggtitle("Mushroom Cap Color, Edible vs Poisonous",
+          subtitle="https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data")+
+  xlab("Quality")+
+  ylab("Percent")
+```
+
+```{r message=FALSE, warning = FALSE}
+ggplot(Prop.Habitat) + 
+  geom_point(aes(Quality,Edib),shape=69,fill="darkgreen", color="green", size=3,alpha=.8) + 
+  geom_point(aes(Quality,Pois),shape=80,fill="darkred", color="red", size=3, alpha=.8) +
+  theme_bw()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"))+
+  ggtitle("Mushroom Cap Color, Edible vs Poisonous",
+          subtitle="https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data")+
+  xlab("Quality")+
+  ylab("Percent")
+```
+
+```{r message=FALSE, warning = FALSE}
+ggplot(Prop.Odor) + 
+  geom_point(aes(Quality,Edib),shape=69,fill="darkgreen", color="green", size=3,alpha=.8) + 
+  geom_point(aes(Quality,Pois),shape=80,fill="darkred", color="red", size=3, alpha=.8) +
+  theme_bw()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"))+
+  ggtitle("Mushroom Cap Color, Edible vs Poisonous",
+          subtitle="https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data")+
+  xlab("Quality")+
+  ylab("Percent")
+```
+
+```{r message=FALSE, warning = FALSE}
+ggplot(Prop.Population) + 
+  geom_point(aes(Quality,Edib),shape=69,fill="darkgreen", color="green", size=3,alpha=.8) + 
+  geom_point(aes(Quality,Pois),shape=80,fill="darkred", color="red", size=3, alpha=.8) +
+  theme_bw()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"))+
+  ggtitle("Mushroom Cap Color, Edible vs Poisonous",
+          subtitle="https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data")+
+  xlab("Quality")+
+  ylab("Percent")
 ```
 
 ## Links
-Link to repository file:
+Link to repository .Rmd file:
 https://github.com/sigmasigmaiota/mushroom/blob/master/Assignment1_StephenJones.Rmd
 
 Direct link to this .Rmd:
